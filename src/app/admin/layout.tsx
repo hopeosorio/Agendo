@@ -21,7 +21,7 @@ import {
   LogOut
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { getSettings } from "@/app/actions/settings";
 import { syncTenant } from "@/app/actions/onboarding";
 import { NavigationProvider, useNavigationGuard } from "@/context/NavigationContext";
@@ -43,11 +43,7 @@ export default function AdminLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useUser();
-  const { organization, isLoaded: isOrgLoaded, membership } = useOrganization();
-  const { userMemberships } = useOrganizationList({ userMemberships: true });
-  const searchParams = useSearchParams();
-  const inviteToken = searchParams.get("invite_token") || undefined;
-
+  const { membership } = useOrganization();
   const isAdmin = membership?.role === "org:admin";
   
   // Filtrar el menú según el rol
@@ -56,12 +52,37 @@ export default function AdminLayout({
     // Los miembros normales solo ven Resumen, Citas y Clientes
     return ["Resumen", "Citas", "Clientes"].includes(item.label);
   });
+
+  return (
+    <NavigationProvider>
+      <Suspense fallback={
+        <div className="flex min-h-screen bg-[#f8fafc] items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <LoaderIcon className="w-10 h-10 animate-spin text-blue-600" />
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Iniciando Panel...</p>
+          </div>
+        </div>
+      }>
+        <AdminContentWrapper 
+          filteredMenuItems={filteredMenuItems}
+          isAdmin={isAdmin}
+          children={children}
+        />
+      </Suspense>
+    </NavigationProvider>
+  );
+}
+
+function AdminContentWrapper({ filteredMenuItems, isAdmin, children }: any) {
+  const { organization, isLoaded: isOrgLoaded } = useOrganization();
+  const { userMemberships } = useOrganizationList({ userMemberships: true });
+  const searchParams = useSearchParams();
+  const inviteToken = searchParams.get("invite_token") || undefined;
   
   const [dbTenant, setDbTenant] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Si hay un token, sincronizamos de inmediato para vincular al usuario
     if (inviteToken) {
       handleSync(inviteToken);
     } else if (isOrgLoaded && organization) {
@@ -84,40 +105,25 @@ export default function AdminLayout({
     }
   };
 
-  const loadTenantData = async () => {
-    try {
-      const data = await getSettings();
-      setDbTenant(data);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const hasMultipleOrgs = (userMemberships?.data?.length ?? 0) > 1;
   const bookingUrl = dbTenant?.slug 
     ? `/book/${dbTenant.slug}` 
     : (organization?.slug ? `/book/${organization.slug}` : `/book/${organization?.id}`);
   
-  // Use DB data with Clerk fallback
   const brandName = dbTenant?.name || organization?.name || "Agendo";
   const brandImage = dbTenant?.logoUrl || organization?.imageUrl;
 
   return (
-    <NavigationProvider>
-      <AdminContent 
-        brandName={brandName}
-        brandImage={brandImage}
-        bookingUrl={bookingUrl}
-        filteredMenuItems={filteredMenuItems}
-        isAdmin={isAdmin}
-        organization={organization}
-        loading={loading}
-      >
-        {children}
-      </AdminContent>
-    </NavigationProvider>
+    <AdminContent 
+      brandName={brandName}
+      brandImage={brandImage}
+      bookingUrl={bookingUrl}
+      filteredMenuItems={filteredMenuItems}
+      isAdmin={isAdmin}
+      organization={organization}
+      loading={loading}
+    >
+      {children}
+    </AdminContent>
   );
 }
 

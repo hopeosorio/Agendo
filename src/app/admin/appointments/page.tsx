@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef, Suspense } from "react";
 import { useSearchParams, useRouter, useParams } from "next/navigation";
 import { getAdminAppointments, updateAppointmentStatus, deleteAdminAppointment, rescheduleAdminAppointment } from "@/app/actions/appointments";
 import {
@@ -48,7 +48,7 @@ const statusMap = {
   NOSHOW: { label: "No asistió", color: "bg-rose-100 text-rose-700 border-rose-200" }
 };
 
-export default function AppointmentsPage() {
+function AppointmentsContent() {
   const searchParams = useSearchParams();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,7 +129,7 @@ export default function AppointmentsPage() {
         clearTimeout(timer2);
       };
     }
-  }, [view, loading, appointments.length, selectedAppointment !== null, currentDate]); 
+  }, [view, loading, appointments.length, selectedAppointment !== null, currentDate]);
 
   const loadAppointments = async () => {
     try {
@@ -432,12 +432,12 @@ export default function AppointmentsPage() {
       <AnimatePresence>
         {selectedAppointment && (
           <>
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              exit={{ opacity: 0 }} 
-              onClick={() => setSelectedAppointment(null)} 
-              className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100]" 
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedAppointment(null)}
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100]"
               style={{ height: '100vh', width: '100vw' }}
             />
             <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 200 }} className="fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-[101] border-l border-slate-200 overflow-hidden flex flex-col">
@@ -493,36 +493,36 @@ export default function AppointmentsPage() {
 
                   <div className="grid grid-cols-2 gap-3">
                     {selectedAppointment.status === "PENDING" && (
-                       <button
-                         onClick={() => handleStatusChange(selectedAppointment.id, "CONFIRMED")}
-                         disabled={isUpdating}
-                         className="flex items-center justify-center gap-2 py-4 bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 active:scale-95"
-                       >
-                         <CheckCircle2 className="w-4 h-4" /> Confirmar
-                       </button>
+                      <button
+                        onClick={() => handleStatusChange(selectedAppointment.id, "CONFIRMED")}
+                        disabled={isUpdating}
+                        className="flex items-center justify-center gap-2 py-4 bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 active:scale-95"
+                      >
+                        <CheckCircle2 className="w-4 h-4" /> Confirmar
+                      </button>
                     )}
                     {selectedAppointment.status === "CONFIRMED" && (
-                       <button
-                         onClick={() => setConfirmAction({ id: selectedAppointment.id, type: "NOSHOW" })}
-                         disabled={isUpdating}
-                         className="flex items-center justify-center gap-2 py-4 bg-rose-50 border-2 border-rose-100 text-rose-600 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-rose-100 transition-all active:scale-95"
-                       >
-                         <CalendarOff className="w-4 h-4" /> No asistió
-                       </button>
+                      <button
+                        onClick={() => setConfirmAction({ id: selectedAppointment.id, type: "NOSHOW" })}
+                        disabled={isUpdating}
+                        className="flex items-center justify-center gap-2 py-4 bg-rose-50 border-2 border-rose-100 text-rose-600 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-rose-100 transition-all active:scale-95"
+                      >
+                        <CalendarOff className="w-4 h-4" /> No asistió
+                      </button>
                     )}
                     {selectedAppointment.status !== "NOSHOW" && (
-                       <button
-                         onClick={() => setConfirmAction({ id: selectedAppointment.id, type: "CANCEL" })}
-                         disabled={isUpdating}
-                         className={cn(
-                            "flex items-center justify-center gap-2 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 border-2",
-                            selectedAppointment.status === "PENDING" || selectedAppointment.status === "CONFIRMED" 
-                               ? "bg-white border-slate-100 text-slate-400 hover:text-rose-600 hover:border-rose-100" 
-                               : "bg-white border-slate-100 text-rose-600 col-span-2"
-                         )}
-                       >
-                         <XCircle className="w-4 h-4" /> Cancelar
-                       </button>
+                      <button
+                        onClick={() => setConfirmAction({ id: selectedAppointment.id, type: "CANCEL" })}
+                        disabled={isUpdating}
+                        className={cn(
+                          "flex items-center justify-center gap-2 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 border-2",
+                          selectedAppointment.status === "PENDING" || selectedAppointment.status === "CONFIRMED"
+                            ? "bg-white border-slate-100 text-slate-400 hover:text-rose-600 hover:border-rose-100"
+                            : "bg-white border-slate-100 text-rose-600 col-span-2"
+                        )}
+                      >
+                        <XCircle className="w-4 h-4" /> Cancelar
+                      </button>
                     )}
                   </div>
 
@@ -543,73 +543,86 @@ export default function AppointmentsPage() {
           </>
         )}
       </AnimatePresence>
-      
+
       {/* ⚠️ MODAL CONFIRMACIÓN DINÁMICO */}
       <AnimatePresence>
         {confirmAction && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-             <motion.div 
-               initial={{ opacity: 0 }}
-               animate={{ opacity: 1 }}
-               exit={{ opacity: 0 }}
-               onClick={() => setConfirmAction(null)}
-               className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[110]" 
-             />
-             <motion.div
-               initial={{ scale: 0.95, opacity: 0, y: 20 }}
-               animate={{ scale: 1, opacity: 1, y: 0 }}
-               exit={{ scale: 0.95, opacity: 0, y: 20 }}
-               className="bg-white rounded-[40px] p-8 max-w-sm w-full shadow-2xl relative z-10 border border-slate-200 text-center"
-             >
-                <div className={cn(
-                  "w-20 h-20 rounded-full flex items-center justify-center mb-6 mx-auto border",
-                  confirmAction.type === 'DELETE' ? "bg-rose-100 border-rose-200 text-rose-600" : "bg-amber-50 border-amber-100 text-amber-500"
-                )}>
-                   {confirmAction.type === 'DELETE' ? <XCircle className="w-10 h-10" /> : <AlertTriangle className="w-10 h-10" />}
-                </div>
-                
-                <h3 className="text-xl font-black text-slate-900 mb-2">
-                   {confirmAction.type === 'DELETE' ? '¿Eliminar cita?' : 
-                    confirmAction.type === 'CANCEL' ? '¿Cancelar cita?' : '¿Confirmar inasistencia?'}
-                </h3>
-                
-                <p className="text-sm font-medium text-slate-500 mb-8 leading-relaxed">
-                   {confirmAction.type === 'DELETE' ? 'Esta acción es permanente y no se puede deshacer.' : 
-                    confirmAction.type === 'CANCEL' ? 'La cita quedará marcada como cancelada en el historial.' : 
-                    'El cliente quedará registrado como "No asistió" de forma permanente.'}
-                </p>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setConfirmAction(null)}
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[10]"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="bg-white rounded-[40px] p-8 max-w-sm w-full shadow-2xl relative z-10 border border-slate-200 text-center"
+            >
+              <div className={cn(
+                "w-20 h-20 rounded-full flex items-center justify-center mb-6 mx-auto border",
+                confirmAction.type === 'DELETE' ? "bg-rose-100 border-rose-200 text-rose-600" : "bg-amber-50 border-amber-100 text-amber-500"
+              )}>
+                {confirmAction.type === 'DELETE' ? <XCircle className="w-10 h-10" /> : <AlertTriangle className="w-10 h-10" />}
+              </div>
 
-                <div className="flex gap-3">
-                   <button 
-                     onClick={() => setConfirmAction(null)}
-                     className="flex-1 py-4 px-4 rounded-2xl border border-slate-200 text-slate-600 font-bold text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-colors"
-                   >
-                     Volver
-                   </button>
-                   <button 
-                     onClick={async () => {
-                        if (confirmAction.type === 'DELETE') {
-                           await deleteAdminAppointment(confirmAction.id);
-                           setAppointments(prev => prev.filter(a => a.id !== confirmAction.id));
-                           setSelectedAppointment(null);
-                        } else {
-                           const status = confirmAction.type === 'CANCEL' ? 'CANCELLED' : 'NOSHOW';
-                           await handleStatusChange(confirmAction.id, status);
-                        }
-                        setConfirmAction(null);
-                     }}
-                     className={cn(
-                        "flex-1 py-4 px-4 rounded-2xl text-white font-bold text-[10px] uppercase tracking-widest shadow-lg active:scale-95 transition-all",
-                        confirmAction.type === 'DELETE' ? "bg-slate-900 shadow-slate-900/20" : "bg-rose-600 shadow-rose-500/20"
-                     )}
-                   >
-                     Confirmar
-                   </button>
-                </div>
-             </motion.div>
+              <h3 className="text-xl font-black text-slate-900 mb-2">
+                {confirmAction.type === 'DELETE' ? '¿Eliminar cita?' :
+                  confirmAction.type === 'CANCEL' ? '¿Cancelar cita?' : '¿Confirmar inasistencia?'}
+              </h3>
+
+              <p className="text-sm font-medium text-slate-500 mb-8 leading-relaxed">
+                {confirmAction.type === 'DELETE' ? 'Esta acción es permanente y no se puede deshacer.' :
+                  confirmAction.type === 'CANCEL' ? 'La cita quedará marcada como cancelada en el historial.' :
+                    'El cliente quedará registrado como "No asistió" de forma permanente.'}
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setConfirmAction(null)}
+                  className="flex-1 py-4 px-4 rounded-2xl border border-slate-200 text-slate-600 font-bold text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-colors"
+                >
+                  Volver
+                </button>
+                <button
+                  onClick={async () => {
+                    if (confirmAction.type === 'DELETE') {
+                      await deleteAdminAppointment(confirmAction.id);
+                      setAppointments(prev => prev.filter(a => a.id !== confirmAction.id));
+                      setSelectedAppointment(null);
+                    } else {
+                      const status = confirmAction.type === 'CANCEL' ? 'CANCELLED' : 'NOSHOW';
+                      await handleStatusChange(confirmAction.id, status);
+                    }
+                    setConfirmAction(null);
+                  }}
+                  className={cn(
+                    "flex-1 py-4 px-4 rounded-2xl text-white font-bold text-[10px] uppercase tracking-widest shadow-lg active:scale-95 transition-all",
+                    confirmAction.type === 'DELETE' ? "bg-slate-900 shadow-slate-900/20" : "bg-rose-600 shadow-rose-500/20"
+                  )}
+                >
+                  Confirmar
+                </button>
+              </div>
+            </motion.div>
           </div>
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+export default function AppointmentsPage() {
+  return (
+    <Suspense fallback={
+      <div className="h-screen flex flex-col items-center justify-center gap-4 bg-white">
+        <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+        <p className="font-black text-[10px] uppercase tracking-widest text-slate-400">Cargando Calendario...</p>
+      </div>
+    }>
+      <AppointmentsContent />
+    </Suspense>
   );
 }

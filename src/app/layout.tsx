@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
@@ -11,10 +11,13 @@ const bricolage = Bricolage_Grotesque({
   variable: "--font-bricolage" 
 });
 
+export const viewport: Viewport = {
+  themeColor: "#f8fafc",
+};
+
 export const metadata: Metadata = {
   title: "Agendo | Gestión de Citas de Élite",
   description: "La plataforma definitiva para gestionar tus citas, profesionales y múltiples sedes desde un solo lugar.",
-  themeColor: "#f8fafc",
 };
 
 export default function RootLayout({

@@ -2,7 +2,6 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextRequest } from "next/server";
 
 // Definimos las rutas que son TOTALMENTE públicas
-// Incluimos las de login/registro para evitar bucles de redirección
 const isPublicRoute = createRouteMatcher([
   "/",               // Página de aterrizaje
   "/book(.*)",       // Portal de reservas público
