@@ -59,7 +59,7 @@ export async function getAdminClients() {
     }
   });
 
-  return clients.map(c => ({
+  return clients.map((c: any) => ({
     id: c.id,
     name: c.name,
     phone: c.phone,
