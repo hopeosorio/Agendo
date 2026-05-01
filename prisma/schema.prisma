@@ -1,0 +1,165 @@
+// Prisma Schema | SaaS Multi-tenant
+// Optimización para Prisma v7 con Motor Library (Conexiones Directas)
+
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// --- MODELOS DE LA PLATAFORMA ---
+
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  logoUrl   String?
+  config    Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  services     Service[]
+  appointments Appointment[]
+  clients      Client[]
+  schedules    Schedule[]
+  blockedDates BlockedDate[]
+  breaks       RecurringBreak[] // 🚀 Relación para descansos recurrentes
+  professionals Professional[]
+  invitations   Invitation[]
+}
+
+model Professional {
+  id        String   @id @default(cuid())
+  clerkId   String?  @unique // ID de usuario de Clerk para vincular cuenta
+  name      String
+  email     String?
+  phone     String?
+  photoUrl  String?
+  bio       String?
+  role      String?  // e.g. "Senior Stylist"
+  isActive  Boolean  @default(true)
+  
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  
+  services  Service[] 
+  appointments Appointment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+}
+
+model Service {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  duration    Int
+  price       Float
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt   DateTime @default(now())
+
+  appointments Appointment[]
+  professionals Professional[]
+}
+
+model Schedule {
+  id        String   @id @default(cuid())
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  isOpen    Boolean  @default(true)
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+}
+
+// 🗓️ MODELO PARA VACACIONES / FESTIVOS
+model BlockedDate {
+  id        String   @id @default(cuid())
+  date      DateTime
+  reason    String?
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, date])
+}
+
+// ☕ MODELO PARA DESCANSOS RECURRENTES (COMIDA, ADMINISTRACIÓN, ETC)
+model RecurringBreak {
+  id        String   @id @default(cuid())
+  name      String
+  dayOfWeek Int      @default(0) // 🗓️ Día de la semana (0-6)
+  startTime String
+  endTime   String
+  isActive  Boolean  @default(true)
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([tenantId])
+}
+
+model Client {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  phone     String
+  notes     String?
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  appointments Appointment[]
+
+  @@unique([tenantId, phone])
+  @@index([tenantId, phone])
+}
+
+model Appointment {
+  id            String   @id @default(cuid())
+  startTime     DateTime
+  endTime       DateTime
+  status        String   @default("PENDING")
+  
+  // Enlace al CRM real
+  clientId      String
+  client        Client   @relation(fields: [clientId], references: [id])
+  
+  serviceId     String
+  service       Service  @relation(fields: [serviceId], references: [id])
+  
+  professionalId String?
+  professional   Professional? @relation(fields: [professionalId], references: [id])
+
+  tenantId      String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, startTime])
+  @@index([clientId])
+  @@index([professionalId])
+}
+
+// 🎟️ SISTEMA DE INVITACIONES PERSONALIZADO (ESTILO MEWI)
+model Invitation {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  email     String
+  role      String   @default("org:member")
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([tenantId])
+}

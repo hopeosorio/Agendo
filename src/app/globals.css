@@ -1,0 +1,134 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  html, body {
+    background-color: #f8fafc; /* Color uniforme con el Dashboard */
+  }
+  body {
+    color: #0f172a; /* slate-900 */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* --- CLERK PREMIUM OVERRIDES --- */
+.cl-rootBox {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.cl-card {
+  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+  box-shadow: 0 25px 50px -12px rgba(37, 99, 235, 0.1) !important;
+  border-radius: 40px !important;
+  background-color: white !important;
+  padding: 1rem !important;
+}
+
+.cl-formButtonPrimary {
+  background-color: #2563eb !important;
+  text-transform: uppercase !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.15em !important;
+  font-size: 11px !important;
+  border-radius: 20px !important;
+  height: 56px !important;
+  transition: all 0.3s ease !important;
+  border: none !important;
+}
+
+.cl-formButtonPrimary:hover {
+  background-color: #1d4ed8 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4) !important;
+}
+
+.cl-formFieldInput {
+  border-radius: 16px !important;
+  border: 2px solid #f1f5f9 !important;
+  background-color: #f8fafc !important;
+  height: 56px !important;
+  font-weight: 600 !important;
+  padding: 0 1.25rem !important;
+}
+
+.cl-formFieldInput:focus {
+  border-color: #2563eb !important;
+  background-color: white !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1) !important;
+}
+
+.cl-headerTitle {
+  font-weight: 900 !important;
+  letter-spacing: -0.05em !important;
+  text-transform: uppercase !important;
+  font-style: italic !important;
+  color: #0f172a !important;
+  font-size: 1.5rem !important;
+}
+
+.cl-headerSubtitle {
+  font-weight: 600 !important;
+  color: #64748b !important;
+}
+
+.cl-organizationSwitcherTrigger {
+  border-radius: 16px !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.cl-fileDropAreaBox {
+  border-radius: 24px !important;
+  border: 2px dashed #e2e8f0 !important;
+  background-color: #f8fafc !important;
+  padding: 2rem !important;
+}
+
+.cl-fileDropAreaIcon {
+  color: #2563eb !important;
+}
+
+/* Fix for the specific upload button inside the drop area */
+.cl-internal-1dauvpw, .cl-fileDropAreaUploadButton {
+  border-radius: 12px !important;
+  background-color: white !important;
+  border: 1px solid #e2e8f0 !important;
+  font-weight: 700 !important;
+}
+
+/* Hide Clerk branding if possible via CSS */
+.cl-internal-b3fm6y { display: none !important; }
+
+/* --- MODERN CUSTOM SCROLLBAR --- */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1; /* slate-300 */
+  border-radius: 20px;
+  border: 2px solid transparent; /* Crea un margen interno */
+  background-clip: padding-box;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8; /* slate-400 */
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Soporte para Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
