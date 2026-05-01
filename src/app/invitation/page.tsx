@@ -4,10 +4,10 @@ import { SignUp, useUser, useOrganizationList } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { Users, ShieldCheck, ArrowRight, Building2 } from "lucide-react";
 import AnimatedBackground from "@/components/AnimatedBackground";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function InvitationPage() {
+function InvitationContent() {
   const { user, isLoaded: isUserLoaded } = useUser();
   const { setActive, isLoaded: isOrgListLoaded } = useOrganizationList();
   const router = useRouter();
@@ -91,5 +91,18 @@ export default function InvitationPage() {
 
       </div>
     </main>
+  );
+}
+
+export default function InvitationPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-4">
+        <div className="w-12 h-12 border-4 border-blue-600/10 border-t-blue-600 rounded-full animate-spin" />
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Validando Invitación...</p>
+      </div>
+    }>
+      <InvitationContent />
+    </Suspense>
   );
 }

@@ -7,8 +7,9 @@ import AnimatedBackground from "@/components/AnimatedBackground";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useAuth } from "@clerk/nextjs";
+import { Suspense } from "react";
 
-export default function SignUpPage() {
+function SignUpContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { isSignedIn, isLoaded: isAuthLoaded } = useAuth();
@@ -110,5 +111,18 @@ export default function SignUpPage() {
         </motion.section>
       </div>
     </main>
+  );
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-4">
+        <div className="w-12 h-12 border-4 border-blue-600/10 border-t-blue-600 rounded-full animate-spin" />
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Iniciando Registro...</p>
+      </div>
+    }>
+      <SignUpContent />
+    </Suspense>
   );
 }
