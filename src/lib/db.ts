@@ -7,7 +7,12 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const pool = new Pool({ 
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }, // Requerido para conexiones seguras en Vercel/Supabase
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
+});
 const adapter = new PrismaPg(pool);
 
 export const db = 
