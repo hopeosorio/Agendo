@@ -130,7 +130,7 @@ export default function AdminDashboardPage() {
         </div>
       </header>
 
-      {/* 📊 Metrics Bento Grid */}
+      {/* Metrics Bento Grid */}
       <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         <motion.div whileHover={{ y: -5 }} className="bg-white/80 backdrop-blur-xl border border-slate-200 p-6 rounded-[32px] shadow-sm flex flex-col justify-between group relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full blur-3xl -mr-10 -mt-10 transition-all group-hover:bg-indigo-100" />
@@ -192,13 +192,13 @@ export default function AdminDashboardPage() {
           <div className="mt-6 relative z-10">
             <p className="text-blue-100 font-bold text-[11px] uppercase tracking-widest">Portal de Reservas</p>
             <p className="text-sm font-bold truncate mt-1 bg-white/10 p-2.5 rounded-xl border border-white/10 font-mono">
-              agendo.app/book/{data.tenant?.slug}
+              agendo-five.vercel.app/book/{data.tenant?.slug}
             </p>
           </div>
         </motion.div>
       </section>
 
-      {/* 🗓️ Main Interactive Section: Calendar & Details */}
+      {/* Main Interactive Section: Calendar & Details */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-8 bg-white/80 backdrop-blur-xl border border-slate-200 rounded-[32px] overflow-hidden shadow-sm flex flex-col">
           <div className="p-6 md:p-8 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/50">
@@ -275,7 +275,7 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* 📈 Side Panel: Recientes */}
+        {/* Side Panel: Recientes */}
         <div className="lg:col-span-4 flex flex-col gap-6">
           <div className="bg-white/80 backdrop-blur-xl border border-slate-200 p-6 rounded-[32px] shadow-sm flex-1 flex flex-col">
             <div className="flex justify-between items-center mb-6">
