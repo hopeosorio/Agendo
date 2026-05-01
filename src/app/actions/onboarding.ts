@@ -125,10 +125,24 @@ export async function syncTenant(inviteToken?: string) {
   }
 }
 
-// Mantenemos createBusiness por si se necesitara en el futuro, pero syncTenant es la principal ahora.
 export async function createBusiness(data: { name: string; slug: string }) {
-  // ... (mismo código de antes)
-  return { success: true };
+  const client = await clerkClient();
+  const user = await currentUser();
+  
+  if (!user) throw new Error("Debes iniciar sesión para crear un negocio");
+
+  try {
+    const organization = await client.organizations.createOrganization({
+      name: data.name,
+      slug: data.slug,
+      createdBy: user.id,
+    });
+
+    return { success: true, orgId: organization.id };
+  } catch (error: any) {
+    console.error("Error al crear organización en Clerk:", error);
+    throw new Error(error.errors?.[0]?.message || "No se pudo crear el negocio. Intenta con otro nombre o enlace.");
+  }
 }
 
 /**
