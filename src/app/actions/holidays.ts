@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
+import { parseDateForTZ } from "@/lib/timezone";
 
 // 🚀 Bypass Definitivo: Usamos acceso dinámico para evitar el persistente caché de Turbopack
 const getModel = () => (db as any).blockedDate;
@@ -30,7 +31,7 @@ export async function addBlockedDate(date: string, reason?: string) {
   const blocked = await model.create({
     data: {
       tenantId: orgId,
-      date: new Date(date + "T00:00:00"),
+      date: parseDateForTZ(date),
       reason
     }
   });

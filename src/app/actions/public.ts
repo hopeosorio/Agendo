@@ -2,9 +2,9 @@
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
-import { startOfDay, endOfDay } from "date-fns";
 import { sendWhatsAppConfirmation, sendEmailConfirmation } from "@/lib/notifications";
 import { clerkClient } from "@clerk/nextjs/server";
+import { startOfDayUTC, endOfDayUTC, parseDateForTZ } from "@/lib/timezone";
 
 // 🚀 Bypass Táctico persistente para Turbopack
 const getBlockedDateModel = () => (db as any).blockedDate;
@@ -50,9 +50,9 @@ export async function getPublicTenantInfo(tenantSlug: string) {
     blockedDates: await db.blockedDate.findMany({ 
       where: { 
         tenantId: tenant.id,
-        date: { gte: startOfDay(new Date()) } 
+        date: { gte: startOfDayUTC() } 
       },
-      take: 100 // Límite razonable para bloqueos futuros
+      take: 100
     })
   };
 }
@@ -102,7 +102,8 @@ export async function getPublicAvailability(tenantSlug: string, date: string) {
   const tenant = await resolveTenantId(tenantSlug);
   if (!tenant) return { schedule: [], existingAppointments: [], isDayBlocked: false };
   
-  const queryDate = startOfDay(new Date(date + "T00:00:00"));
+  const queryStart = parseDateForTZ(date);
+  const queryEnd = endOfDayUTC(queryStart);
   const model = getBlockedDateModel();
 
   const [schedule, existingAppointments, blockedDate] = await Promise.all([
@@ -113,10 +114,7 @@ export async function getPublicAvailability(tenantSlug: string, date: string) {
     db.appointment.findMany({
       where: { 
         tenantId: tenant.id, 
-        startTime: { 
-          gte: startOfDay(queryDate), 
-          lte: endOfDay(queryDate) 
-        },
+        startTime: { gte: queryStart, lte: queryEnd },
         status: { in: ["CONFIRMED", "PENDING"] }
       },
       select: { startTime: true, endTime: true }
@@ -124,10 +122,7 @@ export async function getPublicAvailability(tenantSlug: string, date: string) {
     model ? model.findFirst({
       where: {
         tenantId: tenant.id,
-        date: {
-          gte: startOfDay(queryDate),
-          lte: endOfDay(queryDate)
-        }
+        date: { gte: queryStart, lte: queryEnd }
       }
     }) : null 
   ]);

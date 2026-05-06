@@ -1,5 +1,6 @@
 import { db } from './db';
-import { addMinutes, format, isBefore, parse, startOfDay, endOfDay, getDay, isSameDay, addHours } from 'date-fns';
+import { addMinutes, format, isBefore, parse, addHours } from 'date-fns';
+import { startOfDayUTC, endOfDayUTC, getDayOfWeek, nowInTZ } from '@/lib/timezone';
 
 const prisma = db;
 
@@ -12,6 +13,7 @@ export interface TimeSlot {
 /**
  * Motor de Disponibilidad Agendo v1.0
  * Calcula los huecos libres para un servicio en un tenant específico y una fecha física.
+ * All day boundaries use America/Mexico_City timezone, not server UTC.
  */
 export async function getAvailableSlots(
   tenantSlug: string,
@@ -19,6 +21,10 @@ export async function getAvailableSlots(
   date: Date,
   professionalId?: string | null
 ): Promise<TimeSlot[]> {
+  // Timezone-aware day boundaries for DB queries
+  const dayStart = startOfDayUTC(date);
+  const dayEnd = endOfDayUTC(date);
+
   // 1. Obtener datos del Tenant, Servicio, Horarios y Descansos
   const tenant = await prisma.tenant.findFirst({
     where: {
@@ -29,7 +35,7 @@ export async function getAvailableSlots(
     },
     include: {
       services: { where: { id: serviceId } },
-      schedules: { where: { dayOfWeek: (getDay(date) + 6) % 7 } }
+      schedules: { where: { dayOfWeek: getDayOfWeek(date) } }
     }
   });
 
@@ -42,7 +48,7 @@ export async function getAvailableSlots(
   const blocked = await prisma.blockedDate.findFirst({
     where: { 
       tenantId: tenant?.id, 
-      date: { gte: startOfDay(date), lte: endOfDay(date) } 
+      date: { gte: dayStart, lte: dayEnd } 
     }
   });
 
@@ -61,11 +67,8 @@ export async function getAvailableSlots(
   const existingAppointments = await prisma.appointment.findMany({
     where: {
       tenantId: tenant.id,
-      professionalId: (professionalId as any) || undefined, // 🎯 Bypass de tipo para evitar error de caché de Prisma
-      startTime: {
-        gte: startOfDay(date),
-        lte: endOfDay(date)
-      },
+      professionalId: (professionalId as any) || undefined,
+      startTime: { gte: dayStart, lte: dayEnd },
       status: { notIn: ['CANCELLED', 'REJECTED'] }
     } as any
   });
@@ -103,7 +106,8 @@ export async function getAvailableSlots(
     });
 
     // C. Restricción de tiempo mínimo (1 hora de anticipación mínimo por defecto)
-    const minAllowedTime = addHours(new Date(), 1); 
+    // Use timezone-aware "now" so Vercel's UTC clock doesn't block valid slots
+    const minAllowedTime = addHours(nowInTZ(), 1); 
     const isTooSoon = isBefore(currentSlot, minAllowedTime);
 
     // 🧠 ESTRATEGIA DE INTELIGENCIA TOTAL:

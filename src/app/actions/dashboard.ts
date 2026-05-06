@@ -2,10 +2,9 @@
 
 import { db } from "@/lib/db";
 import { auth } from "@clerk/nextjs/server";
-import { startOfDay, endOfDay, subDays, addDays, startOfMonth, endOfMonth, format } from "date-fns";
-import { es } from "date-fns/locale";
+import { startOfMonth, endOfMonth } from "date-fns";
 import { ensureTenant } from "@/lib/onboarding";
-
+import { startOfDayUTC, endOfDayUTC, subDaysUTC, addDaysUTC, formatInTZ, formatDayName } from "@/lib/timezone";
 
 export async function getDashboardSummary() {
   const { orgId, userId, orgRole } = await auth();
@@ -25,9 +24,11 @@ export async function getDashboardSummary() {
   const baseWhere: any = { tenantId: orgId };
   if (professionalId) baseWhere.professionalId = professionalId;
 
+  // 🕒 Timezone-aware boundaries (Vercel runs in UTC)
+  // These return the correct UTC timestamps for midnight in America/Mexico_City
   const now = new Date();
-  const todayStart = startOfDay(now);
-  const todayEnd = endOfDay(now);
+  const todayStart = startOfDayUTC(now);
+  const todayEnd = endOfDayUTC(now);
 
   // 1. Conteo de KPIs
   const [totalAppointments, todayAppointments, pendingAppointments] = await Promise.all([
@@ -74,9 +75,9 @@ export async function getDashboardSummary() {
      select: { name: true, slug: true }
   });
 
-  // 4. Chart Data (Últimos 7 días)
-  const sevenDaysAgo = startOfDay(subDays(now, 6));
-  
+  // 4. Chart Data (Últimos 7 días) — timezone-aware
+  const sevenDaysAgo = subDaysUTC(now, 6);
+
   // 5. Mapeo de citas por día para el Calendario
   const calendarStart = startOfMonth(now);
   const calendarEnd = endOfMonth(now);
@@ -84,14 +85,15 @@ export async function getDashboardSummary() {
   const monthAppointments = await db.appointment.findMany({
     where: {
       ...baseWhere,
-      startTime: { gte: subDays(calendarStart, 7), lte: addDays(calendarEnd, 7) }
+      startTime: { gte: subDaysUTC(calendarStart, 7), lte: addDaysUTC(calendarEnd, 7) }
     },
     select: { startTime: true }
   });
 
+  // Group by day using timezone-aware formatting
   const appointmentsByDay: Record<string, number> = {};
   monthAppointments.forEach((app: any) => {
-    const key = format(new Date(app.startTime), "yyyy-MM-dd");
+    const key = formatInTZ(new Date(app.startTime));
     appointmentsByDay[key] = (appointmentsByDay[key] || 0) + 1;
   });
 
@@ -103,19 +105,18 @@ export async function getDashboardSummary() {
     select: { startTime: true }
   });
 
+  // Build chart with timezone-aware day names
   const chartDataMap = new Map();
   for (let i = 6; i >= 0; i--) {
-    const d = subDays(now, i);
-    const dayName = format(d, "EEE", { locale: es });
-    const formattedName = dayName.charAt(0).toUpperCase() + dayName.slice(1);
-    chartDataMap.set(format(d, "yyyy-MM-dd"), { name: formattedName, citas: 0 });
+    const d = subDaysUTC(now, i);
+    const key = formatInTZ(d);
+    chartDataMap.set(key, { name: formatDayName(d), citas: 0 });
   }
 
   lastWeekApps.forEach((app: any) => {
-    const key = format(new Date(app.startTime), "yyyy-MM-dd");
+    const key = formatInTZ(new Date(app.startTime));
     if (chartDataMap.has(key)) {
-      const dataPoint = chartDataMap.get(key);
-      dataPoint.citas += 1;
+      chartDataMap.get(key).citas += 1;
     }
   });
 

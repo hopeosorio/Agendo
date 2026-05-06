@@ -64,6 +64,7 @@ next-env.d.ts
 .gemini/
 brain/
 skills-lock.json
+AGENTS.md
 
 # IDEs
 .vscode/
